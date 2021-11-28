@@ -1,0 +1,16 @@
+/home/nvanlaerebeke/projects/personal/EncFIleStorage/EncFIleStorage/obj/Debug/net5.0/EncFIleStorage.csproj.AssemblyReference.cache
+/home/nvanlaerebeke/projects/personal/EncFIleStorage/EncFIleStorage/obj/Debug/net5.0/EncFIleStorage.GeneratedMSBuildEditorConfig.editorconfig
+/home/nvanlaerebeke/projects/personal/EncFIleStorage/EncFIleStorage/obj/Debug/net5.0/EncFIleStorage.AssemblyInfoInputs.cache
+/home/nvanlaerebeke/projects/personal/EncFIleStorage/EncFIleStorage/obj/Debug/net5.0/EncFIleStorage.AssemblyInfo.cs
+/home/nvanlaerebeke/projects/personal/EncFIleStorage/EncFIleStorage/obj/Debug/net5.0/EncFIleStorage.csproj.CoreCompileInputs.cache
+/home/nvanlaerebeke/projects/personal/EncFIleStorage/EncFIleStorage/bin/Debug/net5.0/EncFIleStorage
+/home/nvanlaerebeke/projects/personal/EncFIleStorage/EncFIleStorage/bin/Debug/net5.0/EncFIleStorage.deps.json
+/home/nvanlaerebeke/projects/personal/EncFIleStorage/EncFIleStorage/bin/Debug/net5.0/EncFIleStorage.runtimeconfig.json
+/home/nvanlaerebeke/projects/personal/EncFIleStorage/EncFIleStorage/bin/Debug/net5.0/EncFIleStorage.runtimeconfig.dev.json
+/home/nvanlaerebeke/projects/personal/EncFIleStorage/EncFIleStorage/bin/Debug/net5.0/EncFIleStorage.dll
+/home/nvanlaerebeke/projects/personal/EncFIleStorage/EncFIleStorage/bin/Debug/net5.0/ref/EncFIleStorage.dll
+/home/nvanlaerebeke/projects/personal/EncFIleStorage/EncFIleStorage/bin/Debug/net5.0/EncFIleStorage.pdb
+/home/nvanlaerebeke/projects/personal/EncFIleStorage/EncFIleStorage/obj/Debug/net5.0/EncFIleStorage.dll
+/home/nvanlaerebeke/projects/personal/EncFIleStorage/EncFIleStorage/obj/Debug/net5.0/ref/EncFIleStorage.dll
+/home/nvanlaerebeke/projects/personal/EncFIleStorage/EncFIleStorage/obj/Debug/net5.0/EncFIleStorage.pdb
+/home/nvanlaerebeke/projects/personal/EncFIleStorage/EncFIleStorage/obj/Debug/net5.0/EncFIleStorage.genruntimeconfig.cache
