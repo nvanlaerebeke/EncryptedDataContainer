@@ -1,4 +1,4 @@
-namespace EncFIleStorage
+namespace EncFIleStorage.Container
 {
     internal interface IDataContainerInfo
     {

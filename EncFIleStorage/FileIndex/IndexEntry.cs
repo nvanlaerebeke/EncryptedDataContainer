@@ -1,14 +1,13 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.IO;
 
-namespace EncFileStorage
+namespace EncFIleStorage.FileIndex
 {
     /// <summary>
     /// Object that represents an index item
     /// </summary>
-    internal class IndexEntry : IComparer<IndexEntry>
+    internal class IndexEntry : IComparer<IndexEntry>, IComparable
     {
         /// <summary>
         /// For convenience sake, this is the number of bytes an index entry takes up in the index
@@ -17,6 +16,7 @@ namespace EncFileStorage
 
         /// <summary>
         /// Denotes if this index entry was changed or not
+        /// ToDo: use this to not update/dump the entire Index every time
         /// </summary>
         private bool _changed = false;
         
@@ -202,6 +202,11 @@ namespace EncFileStorage
             if (x == null) return -1;
             if (y == null) return 1;
             return x.SequenceNumber.CompareTo(y.SequenceNumber);
+        }
+
+        public int CompareTo(object? obj)
+        {
+            return this.Compare(this, obj as IndexEntry);
         }
     }
 }

@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EncFIleStorage", "EncFIleStorage\EncFIleStorage.csproj", "{68B6351E-F633-416F-BA41-2A34B534C8D8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrazyFS.Encryption", "..\CrazyFS4Linux\Linux\CrazyFS.Encryption\CrazyFS.Encryption.csproj", "{DD162418-D4E4-454C-86C4-B5A866203E89}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{68B6351E-F633-416F-BA41-2A34B534C8D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{68B6351E-F633-416F-BA41-2A34B534C8D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{68B6351E-F633-416F-BA41-2A34B534C8D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD162418-D4E4-454C-86C4-B5A866203E89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD162418-D4E4-454C-86C4-B5A866203E89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD162418-D4E4-454C-86C4-B5A866203E89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD162418-D4E4-454C-86C4-B5A866203E89}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

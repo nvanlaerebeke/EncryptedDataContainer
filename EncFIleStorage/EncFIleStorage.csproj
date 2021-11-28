@@ -5,4 +5,12 @@
         <TargetFramework>net5.0</TargetFramework>
     </PropertyGroup>
 
+    <ItemGroup>
+      <PackageReference Include="BenchmarkDotNet" Version="0.13.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\CrazyFS4Linux\Linux\CrazyFS.Encryption\CrazyFS.Encryption.csproj" />
+    </ItemGroup>
+
 </Project>

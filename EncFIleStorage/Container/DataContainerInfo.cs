@@ -9,10 +9,10 @@ namespace EncFIleStorage.Container
     internal class DataContainerInfo : IDataContainerInfo
     {
         
-        private readonly DataContainer _dataContainer;
+        private readonly IDataContainer _dataContainer;
         private ushort? _version;
         
-        public DataContainerInfo(DataContainer dataContainer)
+        public DataContainerInfo(IDataContainer dataContainer)
         {
             _dataContainer = dataContainer;
         }

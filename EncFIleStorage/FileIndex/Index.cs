@@ -1,17 +1,23 @@
 using System;
 using System.Buffers.Binary;
+using System.Dynamic;
 using System.Linq;
-using EncFileStorage;
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Order;
+using EncFIleStorage.Container;
 
-namespace EncFIleStorage
+namespace EncFIleStorage.FileIndex
 {
+    [MemoryDiagnoser]
+    [Orderer(SummaryOrderPolicy.FastestToSlowest)]
+    [RankColumn]
     internal class Index : IIndex
     {
-        private readonly DataContainer _dataContainer;
+        private readonly IDataContainer _dataContainer;
         private IndexEntry[] _freeBlockList;
         private IndexEntry[] _index;
 
-        public Index(DataContainer dataContainer)
+        public Index(IDataContainer dataContainer)
         {
             _dataContainer = dataContainer;
         }
@@ -21,7 +27,10 @@ namespace EncFIleStorage
             var freeBlocks = GetFreeBlocks();
             //ToDo: benchmark against none linq methods
             var entry = freeBlocks.FirstOrDefault(b => b.End - b.Start >= size);
-            if (entry != null) return entry;
+            if (entry != null)
+            {
+                return entry;
+            }
 
             var index = GetIndex();
             if (_index.Length > 0)
@@ -44,17 +53,20 @@ namespace EncFIleStorage
 
         public IndexEntry GetBlock(int offset)
         {
-            var block = offset / 4096;
+            var blockIndex = offset / 4096;
             var index = GetIndex();
-            return index.Length >= block ? index[block - 1] : null;
+            return blockIndex >= 0 && index.Length > blockIndex ? index[blockIndex] : null;
         }
 
-
+        [Benchmark]
         public void Flush()
         {
-            IndexMoveFirstBlockIfNeeded();
-
-            var index = GetIndex();
+            
+            var index = IndexMoveFirstBlockIfNeeded(GetIndex());
+            index.ToList().RemoveAll(x => x == null);
+            Array.Sort(index);
+            _index = index;
+            
             var stream = _dataContainer.GetStream();
             var indexBytes = index.Length * IndexEntry.IndexEntryLength;
             if (indexBytes == 0)
@@ -87,10 +99,24 @@ namespace EncFIleStorage
             return GetIndex();
         }
 
+        public void SetUsed(IndexEntry indexEntry, ulong offset, int dataLength)
+        {
+            var index = _freeBlockList.ToList().IndexOf(indexEntry);
+            if (index > -1)
+            {
+                _freeBlockList[index] = null;
+            }
+
+            indexEntry.SetUsed(offset, dataLength);
+        }
+
         private IndexEntry[] GetFreeBlocks()
         {
             //already loaded?
-            if (_freeBlockList != null) return _freeBlockList;
+            if (_freeBlockList != null)
+            {
+                return _freeBlockList.Where(x => x is {Free: true}).ToArray();
+            }
 
             var index = GetIndex();
 
@@ -107,7 +133,10 @@ namespace EncFIleStorage
         private IndexEntry[] GetIndex()
         {
             //Index already loaded?
-            if (_index != null) return _index;
+            if (_index != null)
+            {
+                return _index;
+            }
 
             var stream = _dataContainer.GetStream();
             //if the file is empty, there is nothing
@@ -141,7 +170,10 @@ namespace EncFIleStorage
                 _index = _index.Append(new IndexEntry(index[start..end])).ToArray();
                 blockIndex++;
 
-                if (endIndexLength >= end) break;
+                if (end >= endIndexLength)
+                {
+                    break;
+                }
             }
 
             //Having the IndexEntries in sequence helps
@@ -151,16 +183,20 @@ namespace EncFIleStorage
             //This start/end is not always the same size(ex. 4k) when the blocks get encrypted
             //When blocks get re-used the file container gets fragmented
             //Keeping track of the real 'ending' helps keep fragmentation low when doing file updates
-            for (long i = 1; i < _index.Length; i++) _index[i - 1].SetBlockBoundary(_index[i].Start);
+            for (long i = 1; i < _index.Length; i++)
+            {
+                _index[i - 1].SetBlockBoundary(_index[i].Start);
+            }
+
             return _index;
         }
 
-        private void IndexMoveFirstBlockIfNeeded()
+        private IndexEntry[] IndexMoveFirstBlockIfNeeded(IndexEntry[] index)
         {
             //Check if a data block needs moving
-            var index = GetIndex();
             var indexEnd = _dataContainer.DataContainerInfo.End + index.Length * IndexEntry.IndexEntryLength;
             if (indexEnd > index[^1].End)
+            {
                 do
                 {
                     var oldEntry = index[0];
@@ -171,8 +207,9 @@ namespace EncFIleStorage
                     _dataContainer.Write(freeBlock, data);
                     freeBlock.SetUsed(oldEntry.SequenceNumber, data.Length);
                 } while (indexEnd > index[^1].End);
+            }
 
-            Array.Sort(index);
+            return index;
         }
     }
 }

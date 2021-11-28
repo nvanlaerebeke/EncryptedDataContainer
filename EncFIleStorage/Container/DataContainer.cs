@@ -1,19 +1,20 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using EncFileStorage;
-using EncFIleStorage.Container;
+using EncFIleStorage.Data;
+using EncFIleStorage.FileIndex;
+using Index = EncFIleStorage.FileIndex.Index;
 
-namespace EncFIleStorage
+namespace EncFIleStorage.Container
 {
-    internal class DataContainer
+    internal class DataContainer<T> : IDataContainer where T: IDataTransformer, new()
     {
         private readonly Stream _stream;
-
+        private readonly IDataTransformer _dataTransformer;
         public DataContainer(Stream stream)
         {
             _stream = stream;
+            _dataTransformer = new T();
             DataContainerInfo = new DataContainerInfo(this);
             Index = new Index(this);
         }
@@ -37,7 +38,7 @@ namespace EncFIleStorage
             _stream.Position = indexEntry.Start;
             var data = new byte[indexEntry.Length];
             _stream.Read(data, 0, indexEntry.Length);
-            return data;
+            return _dataTransformer.Out(data);
         }
 
         public void Write(byte[] data, int offset)
@@ -45,24 +46,31 @@ namespace EncFIleStorage
             //ToDo: don't use a list
             var blocks = new List<byte[]>();
             if (data.Length <= 4096)
+            {
                 blocks.Add(data);
+            }
             else
+            {
                 do
                 {
                     var start = blocks.Count * 4096;
                     var end = start + 4096;
-                    if (end > data.Length) end = data.Length;
-                    
+                    if (end > data.Length)
+                    {
+                        end = data.Length;
+                    }
+
                     blocks.Add(data[start..end]);
 
-                    if (end >= data.Length) break;
+                    if (end >= data.Length)
+                    {
+                        break;
+                    }
                 } while (true);
-
-            foreach (var block in blocks)
-            {
-                WriteBlocks(blocks, offset);    
             }
-            
+
+            WriteBlocks(blocks, offset);
+
             Index.Flush();
             _stream.Flush();
         }
@@ -71,23 +79,37 @@ namespace EncFIleStorage
         {
             foreach (var data in dataList)
             {
+                var transformedData = _dataTransformer.In(data);
                 var indexEntry = Index.GetBlock(offset);
-                if (indexEntry == null) indexEntry = Index.GetFreeBlock(data.Length);
-                
-                if (_stream.Length < indexEntry.End) _stream.SetLength(indexEntry.End);
-                
-                _stream.Position = indexEntry.Start;
-                _stream.Write(data, 0, data.Length);
-                indexEntry.SetUsed((ulong) offset / 4096, data.Length);
+                if (indexEntry == null)
+                {
+                    indexEntry = Index.GetFreeBlock(transformedData.Length);
+                }
 
+                if (_stream.Length < indexEntry.End)
+                {
+                    _stream.SetLength(indexEntry.End);
+                }
+
+                _stream.Position = indexEntry.Start;
+                _stream.Write(transformedData, 0, transformedData.Length);
+                Index.SetUsed(indexEntry, (ulong) offset / 4096, transformedData.Length);
                 offset += 4096;
             }
         }
 
         public void Write(IndexEntry indexEntry, byte[] data)
         {
-            if (data.Length > indexEntry.GetAvailableSize()) throw new OverflowException();
-            if (_stream.Length < indexEntry.End) _stream.SetLength(indexEntry.End);
+            if (data.Length > indexEntry.GetAvailableSize())
+            {
+                throw new OverflowException();
+            }
+
+            if (_stream.Length < indexEntry.End)
+            {
+                _stream.SetLength(indexEntry.End);
+            }
+
             _stream.Position = indexEntry.Start;
             _stream.Write(data, 0, data.Length);
         }
@@ -104,9 +126,10 @@ namespace EncFIleStorage
                 _stream.Position = entry.Start;
                 _stream.Read(entryData, 0, entry.Length);
 
+                var transformedData = _dataTransformer.Out(entryData);
                 var start = data.Length;
-                Array.Resize(ref data, data.Length + entryData.Length);
-                Array.Copy(entryData, 0, data, start, entryData.Length);
+                Array.Resize(ref data, data.Length + transformedData.Length);
+                Array.Copy(transformedData, 0, data, start, transformedData.Length);
             }
 
             return data;

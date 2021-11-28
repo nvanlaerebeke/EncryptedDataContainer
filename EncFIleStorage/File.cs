@@ -1,15 +1,17 @@
 using System;
 using System.IO;
 using System.Text;
+using EncFIleStorage.Container;
+using EncFIleStorage.Data;
 
 namespace EncFIleStorage
 {
-    internal class File : IDisposable
+    internal class File<T> : IDisposable, IFile where T : IDataTransformer, new()
     {
         private readonly FileInfo _info;
+        private IDataContainer _dataContainer;
         private FileStream _stream;
-        private DataContainer _dataContainer;
-        
+
         public File(string path)
         {
             _info = new FileInfo(path);
@@ -30,19 +32,23 @@ namespace EncFIleStorage
 
         public void Open()
         {
-            if (_stream == null) 
+            if (_stream == null)
+            {
                 _stream = _info.OpenRead();
+            }
 
-            _dataContainer = new DataContainer(_stream);
+            _dataContainer = new DataContainer<T>(_stream);
         }
 
         public void OpenWrite()
         {
             if (_stream != null)
+            {
                 Close();
+            }
 
             _stream = _info.OpenWrite();
-            _dataContainer = new DataContainer(_stream);
+            _dataContainer = new DataContainer<T>(_stream);
         }
 
         public void Close()
@@ -66,8 +72,11 @@ namespace EncFIleStorage
 
         public void Delete()
         {
-            if (!_info.Exists) return;
-            
+            if (!_info.Exists)
+            {
+                return;
+            }
+
             Close();
             _info.Delete();
         }

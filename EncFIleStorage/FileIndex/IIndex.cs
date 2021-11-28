@@ -1,6 +1,4 @@
-using EncFileStorage;
-
-namespace EncFIleStorage
+namespace EncFIleStorage.FileIndex
 {
     internal interface IIndex
     {
@@ -8,5 +6,6 @@ namespace EncFIleStorage
         IndexEntry GetBlock(int offset);
         void Flush();
         IndexEntry[] GetAll();
+        void SetUsed(IndexEntry indexEntry, ulong offset, int dataLength);
     }
 }
