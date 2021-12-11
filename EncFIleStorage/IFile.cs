@@ -1,16 +1,16 @@
+using System;
 using EncFIleStorage.Data;
 
 namespace EncFIleStorage
 {
-    internal interface IFile
+    internal interface IFile : IDisposable
+
     {
-        void Dispose();
-        void Create();
-        void Open();
-        void OpenWrite();
-        void Close();
-        void Write(byte[] data, int offset);
-        string ReadAllText();
-        void Delete();
+    /*void Create();
+    void Open();
+    void OpenWrite();
+    void Write(byte[] data, int offset);
+    string ReadAllText();
+    void Delete();*/
     }
 }

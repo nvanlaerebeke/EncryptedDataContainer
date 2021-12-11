@@ -1,6 +1,7 @@
 using System;
 using System.Buffers.Binary;
 using System.Dynamic;
+using System.IO;
 using System.Linq;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Order;
@@ -58,6 +59,12 @@ namespace EncFIleStorage.FileIndex
             return blockIndex >= 0 && index.Length > blockIndex ? index[blockIndex] : null;
         }
 
+        public IndexEntry GetBlockAtIndex(int i)
+        {
+            var index = GetIndex();
+            return index.Length > i ? index[i] : null;
+        }
+        
         [Benchmark]
         public void Flush()
         {
@@ -67,7 +74,7 @@ namespace EncFIleStorage.FileIndex
             Array.Sort(index);
             _index = index;
             
-            var stream = _dataContainer.GetStream();
+            var stream = _dataContainer.GetStream(FileMode.Open, FileAccess.ReadWrite);
             var indexBytes = index.Length * IndexEntry.IndexEntryLength;
             if (indexBytes == 0)
             {
@@ -138,7 +145,7 @@ namespace EncFIleStorage.FileIndex
                 return _index;
             }
 
-            var stream = _dataContainer.GetStream();
+            var stream = _dataContainer.GetStream(FileMode.Open, FileAccess.ReadWrite);
             //if the file is empty, there is nothing
             if (stream.Length == 0)
             {

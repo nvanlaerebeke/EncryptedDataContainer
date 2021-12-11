@@ -13,12 +13,12 @@ namespace EncFIleStorage
             //var sampleInputFile = "/home/nvanlaerebeke/sample_small.txt";
             var testOutputFile = "/home/nvanlaerebeke/test";
 
-            using (var f = new File<AesDataTransformer>(testOutputFile))
+            using (var f = new EncryptedFile(testOutputFile))
             {
                 Write(f, sampleInputFile);
             }
 
-            using (var f = new File<AesDataTransformer>(testOutputFile))
+            using (var f = new EncryptedFile(testOutputFile))
             {
                 Read(f);
             }

@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.IO;
 
 namespace EncFIleStorage.Container
 {
@@ -23,7 +24,7 @@ namespace EncFIleStorage.Container
             if (_version.HasValue) return _version.Value;
             
             //read the version from the stream
-            var stream = _dataContainer.GetStream();
+            var stream = _dataContainer.GetStream(FileMode.Open, FileAccess.ReadWrite);
 
             stream.Position = 0;
             var versionBytes = new byte[2];
