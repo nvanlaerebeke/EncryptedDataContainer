@@ -4,18 +4,40 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using EncFIleStorage.Container;
+using Microsoft.Diagnostics.Tracing.Parsers.MicrosoftWindowsTCPIP;
 
 namespace EncFIleStorage.Data
 {
-    class AesDataStream : Stream
+    internal class AesDataStream : Stream
     {
         private readonly IDataContainer _dataContainer;
         private readonly Stream _stream;
-        
+
         public AesDataStream(IDataContainer dataContainer)
-        {;
+        {
+            ;
             _dataContainer = dataContainer;
             _stream = _dataContainer.GetStream(FileMode.Open, FileAccess.ReadWrite);
+        }
+
+        public override bool CanRead => _stream.CanRead;
+        public override bool CanSeek => _stream.CanSeek;
+        public override bool CanTimeout => _stream.CanTimeout;
+        public override bool CanWrite => _stream.CanWrite;
+        public override long Length => _stream.Length;
+
+        public override long Position
+        {
+            get => _stream.Position;
+            set => _stream.Position = value;
+        }
+
+        public override int ReadTimeout => _stream.ReadTimeout;
+
+        public override int WriteTimeout
+        {
+            get => _stream.WriteTimeout;
+            set => _stream.WriteTimeout = value;
         }
 
         public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback? callback, object? state)
@@ -27,28 +49,29 @@ namespace EncFIleStorage.Data
                 var startByte = blockNr * 4096;
 
                 //start reading from somewhere in the block
-                var blockOffset = (offset - startByte);
+                var blockOffset = offset - startByte;
                 var bytesRead = 0;
                 do
                 {
                     var block = _dataContainer.ReadBlock(blockNr);
+                    var blockData = block.GetData();
                     if (blockOffset > 0 && bytesRead == 0)
                     {
-                        Array.Copy(block, blockOffset, buffer, 0, (block.Length - blockOffset));
-                        bytesRead += (int) (block.Length - blockOffset);
+                        Array.Copy(blockData, blockOffset, buffer, 0, blockData.Length - blockOffset);
+                        bytesRead += (int) (blockData.Length - blockOffset);
                     }
                     else
                     {
-                        if (bytesRead + block.Length > count)
+                        if (bytesRead + blockData.Length > count)
                         {
-                            Array.Copy(block, 0, buffer, bytesRead, count - bytesRead);
+                            Array.Copy(blockData, 0, buffer, bytesRead, count - bytesRead);
                         }
                         else
                         {
-                            Array.Copy(block, 0, buffer, bytesRead, block.Length);
+                            Array.Copy(blockData, 0, buffer, bytesRead, blockData.Length);
                         }
 
-                        bytesRead += block.Length;
+                        bytesRead += blockData.Length;
                     }
 
                     blockNr++;
@@ -146,7 +169,7 @@ namespace EncFIleStorage.Data
             //return _stream.ReadAsync(buffer, offset, count, cancellationToken);
         }
 
-        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = new CancellationToken())
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = new())
         {
             throw new NotImplementedException();
             //return _stream.ReadAsync(buffer, cancellationToken);
@@ -165,46 +188,84 @@ namespace EncFIleStorage.Data
         }
 
         public override void SetLength(long value)
-        { 
+        {
             throw new NotImplementedException();
             //_stream.SetLength(value);
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="offset"></param>
+        /// <param name="count"></param>
         public override void Write(byte[] buffer, int offset, int count)
         {
+            //Notes
+            // 1. the offset given does not always begin at data block index 0
+            // 2. data blocks are not always 4096 bytes!
+            // 3. buffer end isn't always the end of the gotten block
+
             //ToDo: don't use a list
-            var blocks = new List<byte[]>();
-            var blockNr = (long) Math.Floor((double) offset / 4096);
-            var block = _dataContainer.ReadBlock(blockNr);
-            var bytesWritten = 0;
-            vim bufferIndex = 0;
+            var blocks = new List<DataBlock>(); //blocks to write
+            var blockNr = (long) Math.Floor((double) offset / 4096); //first block where offset starts
+            var blockOffset = offset - blockNr * 4096; //location that the data starts in the first block
+            long bytesWritten = 0;
+
             do
             {
-                    
-            } while (true);
-            
-            if (buffer.Length <= 4096)
-            {
-                blocks.Add(data);
-            }
-            else
-            {
-                do
+                var block = _dataContainer.ReadBlock(blockNr);
+                var data = block.GetData();
+
+                if (bytesWritten == 0 && blockOffset > 0)
                 {
-                    var start = blocks.Count * 4096;
-                    var end = start + 4096;
-                    if (end > data.Length)
+                    //not a full block
+                    if (blockOffset + buffer.Length <= 4096)
                     {
-                        end = data.Length;
+                        var newBlock = new byte[blockOffset + buffer.Length];
+                        Array.Copy(data, 0, newBlock, 0, blockOffset);
+                        Array.Copy(buffer, 0, newBlock, blockOffset, newBlock.Length - blockOffset);
+                        block.SetData(newBlock);
+                        blocks.Add(block);
+                        bytesWritten += newBlock.Length - blockOffset;
+                        blockNr++;
                     }
-
-                    blocks.Add(data[start..end]);
-
-                    if (end >= data.Length)
+                    //full block
+                    else
                     {
-                        break;
+                        var newBlock = new byte[4096];
+                        Array.Copy(data, 0, newBlock, 0, blockOffset);
+                        Array.Copy(buffer, 0, newBlock, blockOffset, 4096 - blockOffset);
+                        block.SetData(newBlock);
+                        blocks.Add(block);
+                        bytesWritten += 4096 - blockOffset;
+                        blockNr++;
                     }
-                } while (true);
+                }
+                else
+                {
+                    //full block?
+                    if (bytesWritten + 4096 <= buffer.Length)
+                    {
+                        var newBlock = new byte[4096];
+                        Array.Copy(buffer, bytesWritten, newBlock, 0, 4096);
+                        block.SetData(newBlock);
+                        blocks.Add(block);
+                        bytesWritten += 4096;
+                    }
+                    //last/partial block
+                    else
+                    {
+                        var newBlock = new byte[buffer.Length - bytesWritten];
+                        Array.Copy(buffer, bytesWritten, newBlock, 0, buffer.Length - bytesWritten);
+                        block.SetData(newBlock);
+                        blocks.Add(block);
+                        bytesWritten += buffer.Length - bytesWritten;
+                    }
+                }
+            } while (bytesWritten < buffer.Length);
+            _dataContainer.Write(blocks);
         }
 
         public override void Write(ReadOnlySpan<byte> buffer)
@@ -219,7 +280,7 @@ namespace EncFIleStorage.Data
             //return _stream.WriteAsync(buffer, offset, count, cancellationToken);
         }
 
-        public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = new CancellationToken())
+        public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = new())
         {
             throw new NotImplementedException();
             //return _stream.WriteAsync(buffer, cancellationToken);
@@ -231,23 +292,6 @@ namespace EncFIleStorage.Data
             //_stream.WriteByte(value);
         }
 
-        public override bool CanRead => _stream.CanRead;
-        public override bool CanSeek => _stream.CanSeek;
-        public override bool CanTimeout => _stream.CanTimeout;
-        public override bool CanWrite => _stream.CanWrite;
-        public override long Length => _stream.Length;
-        public override long Position
-        {
-            get => _stream.Position;
-            set => _stream.Position = value;
-        }
-        public override int ReadTimeout => _stream.ReadTimeout;
-
-        public override int WriteTimeout
-        {
-            get => _stream.WriteTimeout;
-            set => _stream.WriteTimeout = value;
-        }
         [Obsolete("This Remoting API is not supported and throws PlatformNotSupportedException.", DiagnosticId = "SYSLIB0010", UrlFormat = "https://aka.ms/dotnet-warnings/{0}")]
         public override object InitializeLifetimeService()
         {

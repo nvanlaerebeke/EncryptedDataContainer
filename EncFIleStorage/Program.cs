@@ -27,18 +27,18 @@ namespace EncFIleStorage
 
         private static void Read(IFile file)
         {
-            file.Open();
+            /*file.Open();
             var str = file.ReadAllText();
-            Console.WriteLine(str);
+            Console.WriteLine(str);*/
         }
 
         private static void Write(IFile f, string inputFile)
         {
-            f.Delete();
+            /*f.Delete();
             f.Create();
             f.OpenWrite();
             var content = System.IO.File.ReadAllText(inputFile);
-            f.Write(Encoding.UTF8.GetBytes(content), 0);
+            f.Write(Encoding.UTF8.GetBytes(content), 0);*/
         }
     }
 }

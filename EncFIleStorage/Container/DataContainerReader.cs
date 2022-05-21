@@ -47,13 +47,10 @@ namespace EncFIleStorage.Container
             return data;
         }
 
-        public byte[] ReadBlock(long index)
+        public DataBlock ReadBlock(long index)
         {
             var entry = _dataContainer.Index.GetBlockAtIndex(index);
-            var buffer = new byte[entry.Length];
-            var stream = _dataContainer.GetStream(FileMode.Open, FileAccess.ReadWrite);
-            stream.Read(buffer, (int)entry.Start, entry.Length);
-            return _dataTransformer.Out(buffer);
+            return new DataBlock(entry, _dataContainer);
         }
     }
 }

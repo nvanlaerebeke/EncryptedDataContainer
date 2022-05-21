@@ -22,41 +22,48 @@ namespace EncFIleStorage.Container
             DataContainerInfo = new DataContainerInfo(this);
             Index = new Index(this);
             
-            var dataTransformer = new T();
-            _dataContainerWriter = new DataContainerWriter<T>(this, dataTransformer);
-            _dataContainerReader = new DataContainerReader<T>(this, dataTransformer);
+            Transformer = new T();
+            _dataContainerWriter = new DataContainerWriter<T>(this, Transformer);
+            _dataContainerReader = new DataContainerReader<T>(this, Transformer);
         }
 
+        public IDataTransformer Transformer { get; }
         public IDataContainerInfo DataContainerInfo { get; }
 
         public IIndex Index { get; }
 
-        public byte[] ReadBlock(long index)
+        public void Write(List<DataBlock> dataBlocks)
+        {
+            _dataContainerWriter.Write(dataBlocks);
+        }
+        
+        public DataBlock ReadBlock(long index)
         {
             return _dataContainerReader.ReadBlock(index);
         }
+        
         /*public byte[] Read()
         {
             return _dataContainerReader.Read();
-        }
+        }*/
 
         public byte[] Read(IndexEntry indexEntry)
         {
             return _dataContainerReader.Read(indexEntry);
         }
-
+        /*
         public void Write(byte[] data, int offset)
         {
             _dataContainerWriter.Write(data, offset);
             Index.Flush();
         }
-
+*/
         public void Write(IndexEntry indexEntry, byte[] data)
         {
             _dataContainerWriter.Write(indexEntry, data);
             Index.Flush();
         }
-
+/*
         public byte[] ReadAll()
         {
             return _dataContainerReader.ReadAll();

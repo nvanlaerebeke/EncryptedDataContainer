@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using EncFIleStorage.Data;
 using EncFIleStorage.FileIndex;
+using Index = System.Index;
 
 namespace EncFIleStorage.Container
 {
@@ -11,13 +12,24 @@ namespace EncFIleStorage.Container
         private DataContainer<T> _dataContainer;
         private readonly IDataTransformer _dataTransformer;
 
+        /// <summary>
+        /// ToDo: use IDataContainer so that 'T' doesn't need to be known  in this class
+        /// </summary>
+        /// <param name="dataContainer"></param>
+        /// <param name="dataTransformer"></param>
         public DataContainerWriter(DataContainer<T> dataContainer, IDataTransformer dataTransformer)
         {
             _dataContainer = dataContainer;
             _dataTransformer = dataTransformer;
         }
 
-        public void Write(byte[] data, int offset)
+        /// <summary>
+        /// ToDo: should be Write(long blockNr, byte[] data);
+        ///       Where block number is the full block (4096 bytes) without offset
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="offset"></param>
+        /*public void Write(byte[] data, int offset)
         {
             //ToDo: don't use a list
             var blocks = new List<byte[]>();
@@ -46,7 +58,7 @@ namespace EncFIleStorage.Container
             }
 
             WriteBlocks(blocks, offset);
-        }
+        }*/
 
         public void Write(IndexEntry indexEntry, byte[] data)
         {
@@ -54,7 +66,6 @@ namespace EncFIleStorage.Container
             {
                 throw new OverflowException();
             }
-
 
             var stream = _dataContainer.GetStream(FileMode.Open, FileAccess.ReadWrite);
             if (stream.Length < indexEntry.End)
@@ -67,6 +78,15 @@ namespace EncFIleStorage.Container
             stream.Flush();
         }
 
+        public void Write(List<DataBlock> dataBlocks)
+        {
+            foreach (var block in dataBlocks)
+            {
+                block.Push();
+            } 
+            _dataContainer.Index.Flush();
+        }
+        
         private void WriteBlocks(List<byte[]> dataList, int offset)
         {
             foreach (var data in dataList)

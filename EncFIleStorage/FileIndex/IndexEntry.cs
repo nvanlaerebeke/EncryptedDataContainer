@@ -1,6 +1,7 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.IO;
 
 namespace EncFIleStorage.FileIndex
 {
@@ -143,7 +144,7 @@ namespace EncFIleStorage.FileIndex
         /// <param name="stream"></param>
         /// <exception cref="UnauthorizedAccessException"></exception>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        /*public void Write(byte[] data, Stream stream)
+        public void Write(byte[] data, Stream stream)
         {
             if (!Free) throw new UnauthorizedAccessException();
             var available = GetAvailableSize(); 
@@ -155,7 +156,7 @@ namespace EncFIleStorage.FileIndex
             BinaryPrimitives.WriteUInt32LittleEndian(lengthBytes, (uint)data.Length);
 
             //stream.Position = Start;
-            var block = new byte[available + _indexLength];
+            var block = new byte[1 + startBytes.Length + lengthBytes.Length + data.Length];
             block[0] = 1;
             Array.Copy(startBytes, 0, block, 1, 5); //add start = 4bytes            
             Array.Copy(lengthBytes, 0, block, 5, 2); //add length = 2 bytes
@@ -163,7 +164,7 @@ namespace EncFIleStorage.FileIndex
             
             stream.Position = Start;
             stream.Write(block);
-        }*/
+        }
 
         /// <summary>
         /// Reads the data for this block

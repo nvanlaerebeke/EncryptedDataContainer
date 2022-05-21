@@ -59,13 +59,20 @@ namespace EncFIleStorage.FileIndex
             return blockIndex >= 0 && index.Length > blockIndex ? index[blockIndex] : null;
         }
 
-        public IndexEntry GetBlockAtIndex(int i)
+        /// <summary>
+        /// Returns the index that describes the block at index 'i'
+        ///
+        /// This is always offset / blockSize
+        /// The index is ordered and each block always has an index entry
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        public IndexEntry GetBlockAtIndex(long indexNr)
         {
             var index = GetIndex();
-            return index.Length > i ? index[i] : null;
+            return index.Length > indexNr ? index[indexNr] : null;
         }
         
-        [Benchmark]
         public void Flush()
         {
             
